@@ -43,6 +43,7 @@ pub struct Trace<'i> {
     steps: Vec<Step<'i>>,
 }
 
+#[allow(clippy::needless_lifetimes)]
 impl<'i> Trace<'i> {
     /// Creates a new trace.
     pub fn new() -> Self {
@@ -64,7 +65,7 @@ impl<'i> Trace<'i> {
     }
 }
 
-impl<'i> Trace<'i> {
+impl Trace<'_> {
     /// Dumps the trace to stdout.
     pub fn dump(&self, grammar: &Grammar) {
         let mut pretty_trace_table = Table::new();

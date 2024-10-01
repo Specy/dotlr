@@ -13,6 +13,8 @@ pub enum Tree<'i> {
     Terminal {
         /// Matching token.
         token: Token,
+        /// Matching span.
+        span: Span,
         /// Matching slice.
         slice: &'i str,
     },
@@ -24,7 +26,7 @@ pub enum Tree<'i> {
         pattern: Vec<Tree<'i>>,
     },
 }
-
+#[allow(clippy::needless_lifetimes)]
 impl<'i> Tree<'i> {
     /// Dumps the parse tree to stdout.
     pub fn dump(&self) {
@@ -32,6 +34,7 @@ impl<'i> Tree<'i> {
     }
 }
 
+#[allow(clippy::needless_lifetimes)]
 impl<'i> Display for Tree<'i> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fn display_name_of(tree: &Tree) -> String {

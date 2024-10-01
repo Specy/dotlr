@@ -44,17 +44,11 @@ impl Parser {
 #[cfg(feature = "wasm")]
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
 impl Parser {
-    pub fn new_wasm(grammar: Grammar) -> Result<Parser, JsValue> {
-        match Parser::lr(grammar) {
-            Ok(parser) => Ok(parser),
-            Err(error) => Err(serde_wasm_bindgen::to_value(&error)?),
-        }
+    pub fn new_wasm(grammar: Grammar) -> Result<Parser, WasmParserError> {
+        Parser::lr(grammar).map_err(WasmParserError::new)
     }
-    pub fn new_lalr_wasm(grammar: Grammar) -> Result<Parser, JsValue> {
-        match Parser::lalr(grammar) {
-            Ok(parser) => Ok(parser),
-            Err(error) => Err(serde_wasm_bindgen::to_value(&error)?),
-        }
+    pub fn new_lalr_wasm(grammar: Grammar) -> Result<Parser, WasmParserError> {
+        Parser::lalr(grammar).map_err(WasmParserError::new)
     }
 }
 
@@ -121,13 +115,22 @@ impl Parser {
 
 impl Parser {
     /// Tokenizes an input into a stream of tokens and their corresponding input slices.
-    pub fn tokenize<'i>(&self, input: &'i str) -> Result<Vec<(Token, &'i str)>, ParsingError> {
-        let mut tokens = Vec::new();
+    pub fn tokenize<'i>(
+        &self,
+        input: &'i str,
+    ) -> Result<Vec<(Spanned<Token>, &'i str)>, ParsingError> {
+        let mut tokens: Vec<(Spanned<Token>, &'i str)> = Vec::new();
 
         let mut ordered_constant_tokens = self.grammar.constant_tokens().iter().collect::<Vec<_>>();
         ordered_constant_tokens.sort_by_key(|token| token.len());
 
+
         let mut remaining_input = input.trim_start();
+        let mut offset = input.len() - remaining_input.len();
+        let (initial_new_lines, initial_newline_offset) = count_new_lines(&input[..offset]);
+        let mut line = initial_new_lines + 1;
+        let mut last_newline_offset = initial_newline_offset.unwrap_or(0);
+        let mut column = count_col_position(input, last_newline_offset, offset);
         while !remaining_input.is_empty() {
             let mut matching_token = None;
             let mut matching_slice = "";
@@ -148,29 +151,58 @@ impl Parser {
                 }
             }
 
+
             if matching_token.is_none() {
+                let span = Span { offset, len: 1, line, column };
                 return Err(ParsingError::UnknownToken {
                     token: format_smolstr!("{}", remaining_input.chars().next().unwrap()),
+                    span,
                 });
             }
 
-            tokens.push((matching_token.unwrap(), matching_slice));
-            remaining_input = remaining_input[matching_slice.len()..].trim();
+            let token = Spanned::new(matching_token.unwrap(), Span {
+                offset,
+                len: matching_slice.len(),
+                line,
+                column,
+            });
+            let (slice_lines, slice_newline_offset) = count_new_lines(matching_slice);
+            line += slice_lines;
+            if let Some(slice_newline_offset) = slice_newline_offset {
+                last_newline_offset = offset + slice_newline_offset
+            }
+            tokens.push((token, matching_slice));
+            remaining_input = remaining_input[matching_slice.len()..].trim_start();
+            // add back the whitespace that was trimmed
+            let old_offset = offset;
+            offset = input.len() - remaining_input.len();
+            let whitespace = &input[old_offset..offset];
+            let (whitespace_lines, whitespace_newline_offset) = count_new_lines(whitespace);
+            line += whitespace_lines;
+            if let Some(whitespace_newline_offset) = whitespace_newline_offset {
+                last_newline_offset = old_offset + whitespace_newline_offset;
+            }
+            // skip the newline character
+            column = count_col_position(input, last_newline_offset, offset);
         }
-        tokens.push((Token::Eof, "\0"));
+        let eof = Spanned::new(Token::Eof, Span { offset, len: 0, line, column });
+        tokens.push((eof, "\0"));
 
         Ok(tokens)
     }
 
     /// Parses a tokenized input.
-    pub fn parse<'i>(&self, tokens: Vec<(Token, &'i str)>) -> Result<Tree<'i>, ParsingError> {
+    pub fn parse<'i>(
+        &self,
+        tokens: Vec<(Spanned<Token>, &'i str)>,
+    ) -> Result<Tree<'i>, ParsingError> {
         self.parse_and_trace_internal(tokens, false).map(|(_, tree)| tree)
     }
 
     /// Traces the parsing of a tokenized input.
     pub fn trace<'i>(
         &self,
-        tokens: Vec<(Token, &'i str)>,
+        tokens: Vec<(Spanned<Token>, &'i str)>,
     ) -> Result<(Trace<'i>, Tree<'i>), ParsingError> {
         self.parse_and_trace_internal(tokens, true)
     }
@@ -264,7 +296,7 @@ impl Parser {
     /// Internal parsing logic.
     fn parse_and_trace_internal<'i>(
         &self,
-        mut tokens: Vec<(Token, &'i str)>,
+        mut tokens: Vec<(Spanned<Token>, &'i str)>,
         traced: bool,
     ) -> Result<(Trace<'i>, Tree<'i>), ParsingError> {
         let mut state_stack = vec![0];
@@ -279,7 +311,8 @@ impl Parser {
         let (mut current_token, mut current_slice) = remaining_tokens.pop().unwrap();
         loop {
             let current_state = *state_stack.last().unwrap();
-            let action_to_take = match self.action_table()[current_state].get(&current_token) {
+            let action_to_take = match self.action_table()[current_state].get(current_token.value())
+            {
                 Some(actions) => {
                     assert_eq!(actions.len(), 1);
                     *actions.iter().next().unwrap()
@@ -290,18 +323,24 @@ impl Parser {
                         expected.push(token.clone());
                     }
 
-                    return Err(if current_token == Token::Eof {
-                        ParsingError::UnexpectedEof { expected }
+                    return Err(if *current_token == Token::Eof {
+                        ParsingError::UnexpectedEof { expected, span: current_token.span().clone() }
                     } else {
-                        ParsingError::UnexpectedToken { token: current_slice.into(), expected }
+                        ParsingError::UnexpectedToken {
+                            token: current_slice.into(),
+                            expected,
+                            span: current_token.span().clone(),
+                        }
                     });
                 },
             };
 
             if traced {
-                let mut remaining_tokens_without_slices =
-                    remaining_tokens.iter().map(|(token, _)| token.clone()).collect::<Vec<_>>();
-                remaining_tokens_without_slices.push(current_token.clone());
+                let mut remaining_tokens_without_slices = remaining_tokens
+                    .iter()
+                    .map(|(token, _)| token.value().clone())
+                    .collect::<Vec<_>>();
+                remaining_tokens_without_slices.push(current_token.value().clone());
 
                 trace.step(Step {
                     state_stack: state_stack.clone(),
@@ -320,11 +359,9 @@ impl Parser {
                     return Ok((trace, parse_tree));
                 },
                 Action::Shift { next_state } => {
+                    let (token, span) = current_token.clone().into_tuple();
                     state_stack.push(next_state);
-                    tree_stack.push(Tree::Terminal {
-                        token: current_token.clone(),
-                        slice: current_slice,
-                    });
+                    tree_stack.push(Tree::Terminal { token, span, slice: current_slice });
                     (current_token, current_slice) = remaining_tokens.pop().unwrap();
                 },
                 Action::Reduce { rule_index } => {

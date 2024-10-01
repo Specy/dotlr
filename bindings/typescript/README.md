@@ -5,6 +5,7 @@
 It is focused on providing educational resources for learning about parsing algorithms and compiler construction. The library is designed to be easy to use and understand, making it ideal for students, educators, and developers interested in language processing.
 
 ### Table of Contents
+
 1. [Installation](#installation)
 2. [Basic Usage](#basic-usage)
 3. [Defining a Grammar](#defining-a-grammar)
@@ -16,7 +17,7 @@ It is focused on providing educational resources for learning about parsing algo
 Before using the `dotlr` library, you need to install it. The following instructions assume you have a project with `npm` already set up.
 
 ```bash
-npm install dotlr 
+npm install dotlr
 ```
 
 ### Importing the Library
@@ -24,12 +25,15 @@ npm install dotlr
 To use the `dotlr` library, import it into your TypeScript files:
 
 ```ts
-import { Grammar, LR1Parser, LALRParser } from 'dotlr';
+import { Grammar, LR1Parser, LALRParser } from "dotlr";
 ```
+
 this library uses `ts-results` under the hood to handle errors and results.
+
 ```ts
-import { Ok, Err } from 'ts-results';
+import { Ok, Err } from "ts-results-es";
 ```
+
 ## Basic Usage
 
 The core of the `dotlr` library revolves around defining a grammar and using it to create a parser. The following steps will guide you through this process.
@@ -59,9 +63,9 @@ if (grammarResult.ok) {
 }
 ```
 
-- **Grammar.parse()**: Parses a string representation of a grammar and returns a `Grammar` object.
-- **grammar.getSymbols()**: Returns all symbols (non-terminal and terminal) used in the grammar.
-- **grammar.getProductions()**: Retrieves the list of productions (rules) defined in the grammar.
+-   **Grammar.parse()**: Parses a string representation of a grammar and returns a `Grammar` object.
+-   **grammar.getSymbols()**: Returns all symbols (non-terminal and terminal) used in the grammar.
+-   **grammar.getProductions()**: Retrieves the list of productions (rules) defined in the grammar.
 
 ## Creating LR(1) Parser of the Grammar
 
@@ -88,16 +92,16 @@ if (lr1ParserResult.ok) {
 }
 ```
 
-- **LR1Parser.fromGrammar()**: Consumes the `Grammar` object and returns an `LR1Parser`, you cannot reuse the *Grammar* object, if you need it, you can clone it by using `grammar.clone()`.
-- **parser.parse()**: method attempts to parse the given input string according to the LR(1) grammar. Returns a parse tree if successful.
-- **parser.trace()** method can be used to trace the parsing process. It returns a trace and the resulting parse tree at each step, if parsing is successful.
-- **parser.tokenize()** method can be used to tokenize the input string. It returns a list of tokens.
-- **parser.getActionTable()** method returns the action table of the parser, which is used to determine the next action based on the current state and input token.
-- **parser.getGotoTable()** method returns the goto table of the parser, which is used to determine the next state based on the current state and non-terminal symbol.
-- **parser.getParseTables()** method returns the parsing tables of the parser, which include the action and goto tables.
-- **parser.getAutomaton()** method returns the automaton of the parser, which represents the states and transitions of the LR(1) parser.
-- **parser.getFirstTable()** method returns the first table of the parser, which contains the first sets of symbols.
-- **parser.getFollowTable()** method returns the follow table of the parser, which contains the follow sets of symbols.
+-   **LR1Parser.fromGrammar()**: Consumes the `Grammar` object and returns an `LR1Parser`, you cannot reuse the _Grammar_ object, if you need it, you can clone it by using `grammar.clone()`.
+-   **parser.parse()**: method attempts to parse the given input string according to the LR(1) grammar. Returns a parse tree if successful.
+-   **parser.trace()** method can be used to trace the parsing process. It returns a trace and the resulting parse tree at each step, if parsing is successful.
+-   **parser.tokenize()** method can be used to tokenize the input string. It returns a list of tokens.
+-   **parser.getActionTable()** method returns the action table of the parser, which is used to determine the next action based on the current state and input token.
+-   **parser.getGotoTable()** method returns the goto table of the parser, which is used to determine the next state based on the current state and non-terminal symbol.
+-   **parser.getParseTables()** method returns the parsing tables of the parser, which include the action and goto tables.
+-   **parser.getAutomaton()** method returns the automaton of the parser, which represents the states and transitions of the LR(1) parser.
+-   **parser.getFirstTable()** method returns the first table of the parser, which contains the first sets of symbols.
+-   **parser.getFollowTable()** method returns the follow table of the parser, which contains the follow sets of symbols.
 
 ## Creating LALR(1) Parser of the Grammar
 

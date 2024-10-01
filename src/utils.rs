@@ -39,3 +39,25 @@ where
     }
     map_serializer.end()
 }
+
+
+/// Count the number of new lines in a slice.
+pub fn count_new_lines(slice: &str) -> (usize, Option<usize>) {
+    let mut offset_after_newline = None;
+    let mut count = 0;
+    for (offset, byte) in slice.bytes().enumerate() {
+        if byte == b'\n' {
+            offset_after_newline = Some(offset + 1);
+            count += 1;
+        }
+    }
+    (count, offset_after_newline)
+}
+
+/// Count column position of a char.
+///
+/// The offset is the byte offset of the character in the slice.
+/// The resulting column position is the 1 indexed position of the utf-8 character in the slice.
+pub fn count_col_position(slice: &str, last_newline_offset: usize, offset: usize) -> usize {
+    slice[last_newline_offset..offset].chars().count() + 1
+}
