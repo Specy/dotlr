@@ -36,9 +36,11 @@ fn raising_correct_error_when_parsing_unexpected_token_grammar() {
             assert_eq!(column, 6);
             assert_eq!(token.as_str(), "->");
             assert_eq!(expected.iter().map(|token| token.as_str()).collect::<Vec<_>>(), [
-                "symbol", "constant token", "regular expression token"
+                "symbol",
+                "constant token",
+                "regular expression token"
             ]);
-        }
+        },
         _ => unreachable!(),
     }
 }
@@ -47,11 +49,11 @@ fn raising_correct_error_when_parsing_unexpected_token_grammar() {
 fn raising_correct_error_when_parsing_invalid_regex_grammar() {
     let error = Grammar::parse(common::grammars::INVALID_REGEX).unwrap_err();
     match error {
-        dotlr::GrammarError::InvalidRegex { line, column, regex} => {
+        dotlr::GrammarError::InvalidRegex { line, column, regex } => {
             assert_eq!(line, 3);
             assert_eq!(column, 8);
             assert_eq!(regex.as_str(), "/[1-9][0-9+/");
-        }
+        },
         _ => unreachable!(),
     }
 }

@@ -70,8 +70,9 @@ pub struct Spanned<T: Serialize + Debug + Clone> {
 
 impl<
     #[cfg(not(feature = "serde"))] T: Debug + Clone,
-    #[cfg(feature = "serde")] T: Serialize + Debug + Clone
-> Spanned<T> {
+    #[cfg(feature = "serde")] T: Serialize + Debug + Clone,
+> Spanned<T>
+{
     pub fn new(value: T, span: Span) -> Self {
         Self { value, span }
     }
@@ -89,4 +90,3 @@ impl<
         self.value
     }
 }
-

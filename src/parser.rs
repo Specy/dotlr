@@ -162,7 +162,7 @@ impl Parser {
 
 
             if matching_token.is_none() {
-                let span = Span { offset: offset, len: 1, line, column: column };
+                let span = Span { offset, len: 1, line, column };
                 return Err(ParsingError::UnknownToken {
                     token: format_smolstr!("{}", remaining_input.chars().next().unwrap()),
                     span,
@@ -171,7 +171,7 @@ impl Parser {
 
             line += count_new_lines(matching_slice);
             let token = Spanned::new(matching_token.unwrap(), Span {
-                offset: offset,
+                offset,
                 len: matching_slice.len(),
                 line,
                 column,
@@ -185,7 +185,7 @@ impl Parser {
             line += count_new_lines(whitespace);
             column = offset - input[..offset].rfind('\n').unwrap_or(1) - 1;
         }
-        let eof = Spanned::new(Token::Eof, Span { offset: offset, len: 0, line, column });
+        let eof = Spanned::new(Token::Eof, Span { offset, len: 0, line, column });
         tokens.push((eof, "\0"));
 
         Ok(tokens)

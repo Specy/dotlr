@@ -75,6 +75,8 @@ mod prelude {
             Logos,
         },
         prettytable::{
+            Row,
+            Table,
             cell,
             format::{
                 FormatBuilder,
@@ -82,18 +84,16 @@ mod prelude {
                 LineSeparator,
             },
             row,
-            Row,
-            Table,
         },
         ptree::TreeBuilder,
         regex::Regex,
         smallvec::{
-            smallvec,
             SmallVec,
+            smallvec,
         },
         smol_str::{
-            format_smolstr,
             SmolStr,
+            format_smolstr,
         },
         std::{
             self,
@@ -109,7 +109,7 @@ mod prelude {
     };
     #[cfg(feature = "serde")]
     pub use {
-        serde_renamed::ser::SerializeMap,
         serde_renamed::Serializer,
+        serde_renamed::ser::SerializeMap,
     };
 }
