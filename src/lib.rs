@@ -41,6 +41,10 @@ pub use {
         Trace,
     },
     tree::Tree,
+    utils::{
+        Span,
+        Spanned,
+    },
 };
 
 mod prelude {
@@ -71,8 +75,6 @@ mod prelude {
             Logos,
         },
         prettytable::{
-            Row,
-            Table,
             cell,
             format::{
                 FormatBuilder,
@@ -80,16 +82,18 @@ mod prelude {
                 LineSeparator,
             },
             row,
+            Row,
+            Table,
         },
         ptree::TreeBuilder,
         regex::Regex,
         smallvec::{
-            SmallVec,
             smallvec,
+            SmallVec,
         },
         smol_str::{
-            SmolStr,
             format_smolstr,
+            SmolStr,
         },
         std::{
             self,
@@ -105,7 +109,7 @@ mod prelude {
     };
     #[cfg(feature = "serde")]
     pub use {
-        serde_renamed::Serializer,
         serde_renamed::ser::SerializeMap,
+        serde_renamed::Serializer,
     };
 }
